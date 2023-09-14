@@ -1,12 +1,15 @@
 package net.osslabz.evm.abi;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import net.osslabz.evm.abi.decoder.AbiDecoder;
+import net.osslabz.evm.abi.decoder.AbiMethodEncoder;
 import net.osslabz.evm.abi.decoder.DecodedFunctionCall;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.List;
@@ -134,5 +137,36 @@ public class AbiDecoderTest {
             i++;
             log.debug("-------------------------");
         }
+    }
+
+    @Test
+    public void testEthereumAbi() throws IOException {
+        AbiDecoder abiEtherumDecoder = new AbiDecoder(this.getClass().getResource("/abiFiles/TestEtherum.json").getFile());
+        String inputEtherum = "0x67043cae0000000000000000000000005a9dac9315fdd1c3d13ef8af7fdfeb522db08f020000000000000000000000000000000000000000000000000000000058a20230000000000000000000000000000000000000000000000000000000000040293400000000000000000000000000000000000000000000000000000000000000a0f3df64775a2dfb6bc9e09dced96d0816ff5055bf95da13ce5b6c3f53b97071c800000000000000000000000000000000000000000000000000000000000000034254430000000000000000000000000000000000000000000000000000000000";
+        DecodedFunctionCall decodedFunctionCallEtherum = abiEtherumDecoder.decodeFunctionCall(inputEtherum);
+        int p=0;
+        for (DecodedFunctionCall.Param param : decodedFunctionCallEtherum.getParams()) {
+            log.debug("param {}: name={}, type={}, value={}", p, param.getName(), param.getType(), param.getValue());
+            p++;
+        }
+        /**
+         * param 0: name=addr, type=address, value=0x5a9dac9315fdd1c3d13ef8af7fdfeb522db08f02
+         * param 1: name=timestamp, type=uint256, value=1487012400
+         * param 2: name=chfCents, type=uint256, value=4204852
+         * param 3: name=currency, type=string, value=BTC
+         * param 4: name=memo, type=bytes32, value=0xf3df64775a2dfb6bc9e09dced96d0816ff5055bf95da13ce5b6c3f53b97071c8
+         */
+    }
+
+    /**
+     *  use the testEthereumAbi output data as testAbiMethodEncode input data, to generate the input data
+     * @throws Exception
+     */
+    @Test
+    public void testAbiMethodEncode() throws Exception {
+        AbiMethodEncoder lbAbiDecoder2 = new AbiMethodEncoder(this.getClass().getResource("/abiFiles/TestEtherum.json").getFile());
+        String memo = "0xf3df64775a2dfb6bc9e09dced96d0816ff5055bf95da13ce5b6c3f53b97071c8";
+        String inputData2 = lbAbiDecoder2.encodeMethod("registerOffChainDonation","0x5a9dac9315fdd1c3d13ef8af7fdfeb522db08f02",1487012400,4204852,"BTC",memo);
+        System.out.println(inputData2);
     }
 }

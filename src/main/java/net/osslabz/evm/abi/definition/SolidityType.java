@@ -3,6 +3,7 @@ package net.osslabz.evm.abi.definition;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 import net.osslabz.evm.abi.util.ByteUtil;
+import org.bouncycastle.util.encoders.Hex;
 
 import java.lang.reflect.Array;
 import java.math.BigInteger;
@@ -299,8 +300,23 @@ public abstract class SolidityType {
                 BigInteger bigInt = new BigInteger(value.toString());
                 return IntType.encodeInt(bigInt);
             } else if (value instanceof String) {
+                byte[] bytes = null;
+                //if the string is a hex string, then encode it as such
+                // fix the issue : net.osslabz.evm.abi.AbiDecoderTest.testAbiMethodEncode()  Time elapsed: 0.004 sec  <<< FAILURE!
+                //java.lang.ArrayIndexOutOfBoundsException: arraycopy: last destination index 66 out of bounds for byte[32]
+                //	at java.base/java.lang.System.arraycopy(Native Method)
+                //	at net.osslabz.evm.abi.definition.SolidityType$Bytes32Type.encode(SolidityType.java:304)
+                //	at net.osslabz.evm.abi.definition.AbiDefinition$Function.encodeArguments(AbiDefinition.java:282)
+                //	at net.osslabz.evm.abi.definition.AbiDefinition$Function.encode(AbiDefinition.java:254)
+                //	at net.osslabz.evm.abi.decoder.AbiMethodEncoder.encodeMethod(AbiMethodEncoder.java:47)
+                //	at net.osslabz.evm.abi.AbiDecoderTest.testAbiMethodEncode(AbiDecoderTest.java:165)
+                String s = (String)value;
+                if (s.startsWith("0x")) {
+                    bytes = Hex.decode(s.substring(2));
+                }else {
+                    bytes = s.getBytes(StandardCharsets.UTF_8);
+                }
                 byte[] ret = new byte[Int32Size];
-                byte[] bytes = ((String) value).getBytes(StandardCharsets.UTF_8);
                 System.arraycopy(bytes, 0, ret, 0, bytes.length);
                 return ret;
             } else if (value instanceof byte[]) {
